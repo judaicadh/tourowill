@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Touro Will Beneficiaries · 1854</title>
+<meta name="description" content="An interactive dashboard documenting the 65 bequests in the 1854 will of Judah Touro (1775–1854), American merchant and philanthropist.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;0,900;1,400&family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+<style>
+  :root {
+    --bg: #F2E9D4;
+    --bg-soft: #ECE0C5;
+    --surface: #F8F0DB;
+    --ink: #1E1810;
+    --ink-soft: #5C4E3A;
+    --ink-faint: #8A7A60;
+    --rule: #C4B69A;
+    --rule-soft: #D6C9AC;
+    --oxblood: #7A2E1F;
+    --oxblood-deep: #5A1F12;
+    --ochre: #B58A3D;
+    --ochre-soft: #D4B271;
+    --display: 'Playfair Display', 'Times New Roman', serif;
+    --body: 'Crimson Pro', Georgia, serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 18px;
+    line-height: 1.55;
+    font-feature-settings: 'onum' 1, 'kern' 1;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    /* subtle paper grain */
+    background-image:
+      radial-gradient(rgba(122, 46, 31, 0.04) 1px, transparent 1px),
+      radial-gradient(rgba(30, 24, 16, 0.025) 1px, transparent 1px);
+    background-size: 32px 32px, 17px 17px;
+    background-position: 0 0, 8px 8px;
+  }
+
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 3rem 1.5rem 4rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead {
+    text-align: center;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid var(--ink);
+    position: relative;
+  }
+  .masthead::after {
+    content: '';
+    display: block;
+    position: absolute;
+    left: 0; right: 0; bottom: -7px;
+    height: 1px;
+    background: var(--ink);
+  }
+  .eyebrow {
+    font-family: var(--body);
+    font-size: 0.85rem;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--oxblood);
+    margin: 0 0 1.2rem;
+    font-weight: 600;
+  }
+  .eyebrow .ornament {
+    color: var(--ochre);
+    margin: 0 0.7em;
+    font-size: 0.9em;
+  }
+  h1.title {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: clamp(2.4rem, 5.5vw, 4.4rem);
+    line-height: 1.02;
+    letter-spacing: -0.01em;
+    margin: 0 0 0.5rem;
+    color: var(--ink);
+  }
+  h1.title em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--oxblood);
+  }
+  .dek {
+    font-family: var(--display);
+    font-style: italic;
+    font-weight: 400;
+    font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+    color: var(--ink-soft);
+    max-width: 56ch;
+    margin: 0.7rem auto 0;
+    line-height: 1.45;
+  }
+  .byline {
+    margin: 1.4rem 0 0;
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  /* ---------- Section heads ---------- */
+  .section {
+    margin-top: 3.5rem;
+  }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin: 0 0 1.4rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .section-num {
+    font-family: var(--display);
+    font-style: italic;
+    font-weight: 400;
+    font-size: 1rem;
+    color: var(--oxblood);
+    letter-spacing: 0.05em;
+  }
+  .section-title {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(1.4rem, 2.3vw, 1.85rem);
+    margin: 0;
+    color: var(--ink);
+    letter-spacing: -0.005em;
+  }
+  .section-lede {
+    font-family: var(--display);
+    font-style: italic;
+    color: var(--ink-soft);
+    margin-left: auto;
+    font-size: 0.95rem;
+    text-align: right;
+    max-width: 32ch;
+  }
+
+  /* ---------- Stat tablets ---------- */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    padding: 1.4rem 1.2rem 1.3rem;
+    position: relative;
+    text-align: center;
+  }
+  .stat::before, .stat::after {
+    content: '';
+    position: absolute;
+    left: 8px; right: 8px;
+    height: 1px;
+    background: var(--ochre);
+    opacity: 0.4;
+  }
+  .stat::before { top: 5px; }
+  .stat::after { bottom: 5px; }
+  .stat-num {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(2rem, 4vw, 2.6rem);
+    line-height: 1;
+    color: var(--oxblood);
+    letter-spacing: -0.015em;
+    font-feature-settings: 'lnum' 1, 'tnum' 1;
+  }
+  .stat-label {
+    margin-top: 0.6rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .stat-sub {
+    margin-top: 0.3rem;
+    font-style: italic;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+  }
+
+  @media (max-width: 720px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .section-lede { display: none; }
+  }
+
+  /* ---------- Map ---------- */
+  #map {
+    height: 520px;
+    width: 100%;
+    border: 1px solid var(--ink);
+    background: var(--surface);
+    filter: sepia(0.18) saturate(0.85);
+  }
+  .map-legend {
+    margin-top: 0.8rem;
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+    flex-wrap: wrap;
+  }
+  .legend-marker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .legend-marker .dot {
+    border-radius: 50%;
+    background: var(--oxblood);
+    border: 1.5px solid var(--surface);
+    box-shadow: 0 0 0 1px var(--oxblood);
+    opacity: 0.85;
+  }
+  .leaflet-popup-content-wrapper {
+    background: var(--surface);
+    color: var(--ink);
+    border-radius: 2px;
+    border: 1px solid var(--ink);
+    box-shadow: 4px 4px 0 rgba(30, 24, 16, 0.15);
+  }
+  .leaflet-popup-tip { background: var(--surface); border: 1px solid var(--ink); }
+  .popup-title {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin: 0 0 0.2rem;
+    color: var(--oxblood);
+  }
+  .popup-sub {
+    font-style: italic;
+    color: var(--ink-faint);
+    font-size: 0.85rem;
+    margin: 0 0 0.6rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  .popup-list { margin: 0; padding: 0; list-style: none; font-size: 0.9rem; }
+  .popup-list li { padding: 0.15rem 0; display: flex; justify-content: space-between; gap: 1rem; }
+  .popup-list .amt { font-feature-settings: 'tnum' 1; color: var(--ink-soft); }
+
+  /* ---------- Charts ---------- */
+  .charts {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+  @media (max-width: 900px) { .charts { grid-template-columns: 1fr; } }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    padding: 1.4rem 1.4rem 1rem;
+  }
+  .chart-title {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 1.15rem;
+    margin: 0 0 0.3rem;
+    color: var(--ink);
+  }
+  .chart-sub {
+    font-style: italic;
+    color: var(--ink-soft);
+    font-size: 0.88rem;
+    margin: 0 0 1rem;
+  }
+  .chart-wrap { position: relative; width: 100%; }
+  #cityChart { height: 540px; }
+  #typeChart { height: 380px; }
+
+  /* ---------- Table ---------- */
+  .table-controls {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .search-input {
+    flex: 1;
+    min-width: 200px;
+    font-family: var(--body);
+    font-size: 1rem;
+    padding: 0.6rem 0.9rem;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-input:focus { border-color: var(--oxblood); }
+  .search-input::placeholder { color: var(--ink-faint); font-style: italic; }
+  .filter-select {
+    font-family: var(--body);
+    font-size: 0.95rem;
+    padding: 0.6rem 0.9rem;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    color: var(--ink);
+    cursor: pointer;
+    outline: none;
+  }
+  .row-count {
+    font-style: italic;
+    color: var(--ink-faint);
+    font-size: 0.9rem;
+  }
+
+  .table-scroll {
+    border: 1px solid var(--ink);
+    background: var(--surface);
+    max-height: 600px;
+    overflow: auto;
+  }
+  table.ledger {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+  }
+  table.ledger thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--ink);
+    color: var(--bg);
+    text-align: left;
+    padding: 0.7rem 0.9rem;
+    font-family: var(--body);
+    font-weight: 600;
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  table.ledger thead th:hover { background: var(--oxblood-deep); }
+  table.ledger thead th .sort-ind {
+    margin-left: 0.4em;
+    color: var(--ochre-soft);
+    font-size: 0.75em;
+  }
+  table.ledger tbody td {
+    padding: 0.55rem 0.9rem;
+    border-bottom: 1px solid var(--rule-soft);
+    vertical-align: top;
+  }
+  table.ledger tbody tr:hover { background: var(--bg-soft); }
+  table.ledger tbody tr:last-child td { border-bottom: none; }
+  td.amt { text-align: right; font-feature-settings: 'tnum' 1; white-space: nowrap; }
+  td.bequest-no { color: var(--ink-faint); font-style: italic; }
+  .pill {
+    display: inline-block;
+    font-size: 0.75rem;
+    padding: 0.12rem 0.5rem;
+    background: var(--bg-soft);
+    border: 1px solid var(--rule);
+    color: var(--ink-soft);
+    border-radius: 2px;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+  .pill.charity { border-color: #C2956C; color: #8A5A2E; }
+  .pill.synagogue { border-color: #8A6B97; color: #5B3F70; }
+  .pill.person { border-color: #7A2E1F; color: #7A2E1F; }
+  .pill.school { border-color: #6B8A5E; color: #3F5B36; }
+  .pill.hospital { border-color: #5E7A8A; color: #36505F; }
+  .pill.city { border-color: #B58A3D; color: #8A6420; }
+
+  /* ---------- Footer ---------- */
+  footer {
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 2px solid var(--ink);
+    position: relative;
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 0.88rem;
+  }
+  footer::before {
+    content: '';
+    display: block;
+    position: absolute;
+    left: 0; right: 0; top: 7px;
+    height: 1px;
+    background: var(--ink);
+  }
+  footer .ornament {
+    color: var(--ochre);
+    font-size: 1.2em;
+    margin: 0 0.4em;
+  }
+  footer p { margin: 0.5rem 0; max-width: 60ch; margin-left: auto; margin-right: auto; }
+  footer em { color: var(--ink-faint); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- ============ MASTHEAD ============ -->
+  <header class="masthead">
+    <p class="eyebrow">The Will of <span class="ornament">❦</span> Judah Touro <span class="ornament">❦</span> MDCCCLIV</p>
+    <h1 class="title">A Ledger of <em>Bequests</em></h1>
+    <p class="dek">Sixty-five gifts of money and property distributed across two continents by an American merchant and philanthropist, drawn from his last will and testament, January 1854.</p>
+    <p class="byline">1775 — 1854 &nbsp; · &nbsp; New Orleans</p>
+  </header>
+
+  <!-- ============ STATS ============ -->
+  <section class="section">
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-num" id="stat-total">$0</div>
+        <div class="stat-label">Total Bequeathed</div>
+        <div class="stat-sub">≈ $20 M in 2026</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" id="stat-beneficiaries">0</div>
+        <div class="stat-label">Beneficiaries</div>
+        <div class="stat-sub">named recipients</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" id="stat-cities">0</div>
+        <div class="stat-label">Cities Reached</div>
+        <div class="stat-sub">across both shores</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" id="stat-types">0</div>
+        <div class="stat-label">Recipient Kinds</div>
+        <div class="stat-sub">institutions &amp; persons</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MAP ============ -->
+  <section class="section">
+    <div class="section-head">
+      <span class="section-num">№ I</span>
+      <h2 class="section-title">Geography of Generosity</h2>
+      <span class="section-lede">Markers sized by total gift value at each location. Click a marker for details.</span>
+    </div>
+    <div id="map" aria-label="Interactive map showing the locations of Touro Will beneficiaries"></div>
+    <div class="map-legend">
+      <span class="legend-marker"><span class="dot" style="width:8px;height:8px;"></span> ≤ $3,000</span>
+      <span class="legend-marker"><span class="dot" style="width:14px;height:14px;"></span> $3k – $25k</span>
+      <span class="legend-marker"><span class="dot" style="width:22px;height:22px;"></span> $25k – $75k</span>
+      <span class="legend-marker"><span class="dot" style="width:30px;height:30px;"></span> &gt; $75k</span>
+    </div>
+  </section>
+
+  <!-- ============ CHARTS ============ -->
+  <section class="section">
+    <div class="section-head">
+      <span class="section-num">№ II</span>
+      <h2 class="section-title">Distribution of the Estate</h2>
+      <span class="section-lede">By recipient location and institutional kind.</span>
+    </div>
+    <div class="charts">
+      <div class="chart-card">
+        <h3 class="chart-title">By City</h3>
+        <p class="chart-sub">Total bequests aggregated to each city of residence.</p>
+        <div class="chart-wrap"><canvas id="cityChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3 class="chart-title">By Kind of Recipient</h3>
+        <p class="chart-sub">Touro gave most generously to charities and the City of Newport.</p>
+        <div class="chart-wrap"><canvas id="typeChart"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ LEDGER ============ -->
+  <section class="section">
+    <div class="section-head">
+      <span class="section-num">№ III</span>
+      <h2 class="section-title">The Complete Ledger</h2>
+      <span class="section-lede">Sortable by any column. Search filters across all fields.</span>
+    </div>
+    <div class="table-controls">
+      <input type="text" id="search" class="search-input" placeholder="Search beneficiaries, cities, recipient types…">
+      <select id="typeFilter" class="filter-select" aria-label="Filter by recipient type">
+        <option value="">All recipient kinds</option>
+      </select>
+      <span class="row-count" id="rowCount">Showing all 65 bequests</span>
+    </div>
+    <div class="table-scroll">
+      <table class="ledger" id="ledger">
+        <thead>
+          <tr>
+            <th data-key="1">№</th>
+            <th data-key="0">Beneficiary</th>
+            <th data-key="2">Kind</th>
+            <th data-key="3">Gift</th>
+            <th data-key="4" style="text-align:right;">Amount</th>
+            <th data-key="5">City</th>
+            <th data-key="6">State</th>
+            <th data-key="7">Country</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer>
+    <p><span class="ornament">❦</span> &nbsp; <em>Compiled from the last will and testament of Judah Touro, dated January 1854.</em> &nbsp; <span class="ornament">❦</span></p>
+    <p>Two bequests of real property without a stated dollar value are recorded as <em>n/a — property gift</em>. The 2026 equivalent of $560,000 (≈ $20 million) is an approximation based on long-run consumer-price inflation.</p>
+    <p>Built with <a href="https://leafletjs.com" style="color:var(--oxblood);">Leaflet</a>, <a href="https://www.chartjs.org" style="color:var(--oxblood);">Chart.js</a>, and OpenStreetMap data &copy; OpenStreetMap contributors, &copy; CARTO.</p>
+  </footer>
+
+</div>
+
+<!-- ============ DATA & LOGIC ============ -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
+<script>
+  // Data columns: [Name, BequestNo, Type, GiftType, Amount, City, State, Country, Lat, Lng]
+  const DATA = [
+    ["Resin Davis Shepherd", 3, "Person", "Money", 10000, "Shepherdstown", "Virginia", "United States of America", 38.751904, -77.688027],
+    ["Aaron Keppell Josephs", 3, "Person", "Money", 10000, "New Orleans", "Louisiana", "United States of America", 29.951066, -90.071532],
+    ["Gershom Kursheedt", 3, "Person", "Money", 10000, "New Orleans", "Louisiana", "United States of America", 29.951066, -90.071532],
+    ["Pierre André Destrac Caxenave", 3, "Person", "Money", 10000, "New Orleans", "Louisiana", "United States of America", 29.951066, -90.071532],
+    ["Dispersed of Judah", 6, "Synagogue", "Property", null, "New Orleans", "Louisiana", "United States of America", 29.951066, -90.071532],
+    ["Hebrew Hospital of New Orleans", 7, "Hospital", "Property", null, "New Orleans", "Louisiana", "United States of America", 29.951066, -90.071532],
+    ["Hebrew Benevolent Association of New Orleans", 8, "Charity", "Money", 5000, "New Orleans", "Louisiana", "United States of America", 29.951066, -90.071532],
+    ["Shangarai Chassed", 9, "Synagogue", "Money", 5000, "New Orleans", "Louisiana", "United States of America", 29.951066, -90.071532],
+    ["Ladies Benevolent Society", 10, "Charity", "Money", 5000, "New Orleans", "Louisiana", "United States of America", 29.951066, -90.071532],
+    ["Hebrew Foreign Mission Society", 11, "Charity", "Money", 5000, "New Orleans", "Louisiana", "United States of America", 29.951066, -90.071532],
+    ["Orphan's Home Asylum", 12, "Charity", "Money", 5000, "New Orleans", "Louisiana", "United States of America", 29.951066, -90.071532],
+    ["Society for the Relief of Destitute Boys in the Fourth District", 13, "Charity", "Money", 5000, "New Orleans", "Louisiana", "United States of America", 29.951066, -90.071532],
+    ["St. Anna's Asylum for the Relief of Destitute Females and Children", 14, "Charity", "Money", 5000, "New Orleans", "Louisiana", "United States of America", 29.951066, -90.071532],
+    ["New Orleans Female Orphan Asylum", 15, "Charity", "Money", 5000, "New Orleans", "Louisiana", "United States of America", 29.951066, -90.071532],
+    ["St. Mary's Catholic Boy's Asylum", 16, "Charity", "Money", 5000, "New Orleans", "Louisiana", "United States of America", 29.951066, -90.071532],
+    ["Milne Asylum of New Orleans", 17, "Charity", "Money", 5000, "New Orleans", "Louisiana", "United States of America", 29.951066, -90.071532],
+    ["Firemen's Charitable Association of New Orleans", 18, "Charity", "Money", 5000, "New Orleans", "Louisiana", "United States of America", 29.951066, -90.071532],
+    ["Seamen's Home", 19, "Charity", "Money", 5000, "New Orleans", "Louisiana", "United States of America", 29.951066, -90.071532],
+    ["Alms House", 20, "Charity", "Money", 80000, "New Orleans", "Louisiana", "United States of America", 29.951066, -90.071532],
+    ["City of Newport", 21, "City Government", "Money", 100000, "Newport", "Rhode Island", "United States of America", 41.490102, -71.312829],
+    ["Redwood Library", 22, "Library", "Money", 3000, "Newport", "Rhode Island", "United States of America", 41.490102, -71.312829],
+    ["Ohabay Shalome", 23, "Synagogue", "Money", 5000, "Boston", "Massachusetts", "United States of America", 42.360083, -71.05888],
+    ["Hebrew Congregation", 24, "Synagogue", "Money", 5000, "Hartford", "Connecticut", "United States of America", 41.763711, -72.685093],
+    ["Hebrew Congregation", 25, "Synagogue", "Money", 5000, "New Haven", "Connecticut", "United States of America", 41.308274, -72.927883],
+    ["North American Relief Society for the Indigent Jews of Jerusalem, Palestine", 26, "Charity", "Money", 10000, "New York City", "New York", "United States of America", 40.712784, -74.005941],
+    ["Aiding Jews in the Holy Land", 27, "Charity", "Money", 50000, "London", "", "United Kingdom", 51.507351, -0.127758],
+    ["Jews' Hospital Society", 29, "Hospital", "Money", 20000, "New York City", "New York", "United States of America", 40.712784, -74.005941],
+    ["Hebrew Benevolent Society Meshibat Nafesh", 30, "Charity", "Money", 5000, "New York City", "New York", "United States of America", 40.712784, -74.005941],
+    ["Hebrew Benevolent Society Gemilut Chased", 31, "Charity", "Money", 5000, "New York City", "New York", "United States of America", 40.712784, -74.005941],
+    ["Talmud Torah School Fund of Shearith Israel Congregation", 32, "School", "Money", 13000, "New York City", "New York", "United States of America", 40.712784, -74.005941],
+    ["Educational Institute of B'nai Jeshurun Congregation", 33, "School", "Money", 3000, "New York City", "New York", "United States of America", 40.712784, -74.005941],
+    ["Shangrai Tefila Congregation", 34, "Synagogue", "Money", 3000, "New York City", "New York", "United States of America", 40.712784, -74.005941],
+    ["Ladies Benevolent Society", 35, "Charity", "Money", 3000, "New York City", "New York", "United States of America", 40.712784, -74.005941],
+    ["Female Hebrew Benevolent Society", 36, "Charity", "Money", 3000, "Philadelphia", "Pennsylvania", "United States of America", 39.952584, -75.165222],
+    ["Hebrew Education Society", 37, "School", "Money", 20000, "Philadelphia", "Pennsylvania", "United States of America", 39.952584, -75.165222],
+    ["United Hebrew Benevolent Society of Philadelphia", 38, "Charity", "Money", 3000, "Philadelphia", "Pennsylvania", "United States of America", 39.952584, -75.165222],
+    ["Ahabat Israel Congregation", 39, "Synagogue", "Money", 3000, "Baltimore", "Maryland", "United States of America", 39.290385, -76.612189],
+    ["Beth Shalome Congregation", 40, "Synagogue", "Money", 3000, "Richmond", "Virginia", "United States of America", 37.540725, -77.436048],
+    ["Shearith Israel Congregation", 41, "Synagogue", "Money", 5000, "Charleston", "South Carolina", "United States of America", 32.776475, -79.931051],
+    ["Shangrai Shamoyim Congregation", 42, "Synagogue", "Money", 2000, "Mobile", "Alabama", "United States of America", 30.695366, -88.039891],
+    ["Mikve Israel Congregation", 43, "Synagogue", "Money", 5000, "Savannah", "Georgia", "United States of America", 32.083541, -81.099834],
+    ["Hebrew Congregation", 44, "Synagogue", "Money", 2000, "Montgomery", "Alabama", "United States of America", 32.366805, -86.299969],
+    ["Hebrew Congregation", 45, "Synagogue", "Money", 2000, "Memphis", "Tennessee", "United States of America", 35.149534, -90.04898],
+    ["Adas Israel Congregation", 46, "Synagogue", "Money", 2000, "Louisville", "Kentucky", "United States of America", 38.252665, -85.758456],
+    ["Bnai Israel Congregation", 47, "Synagogue", "Money", 3000, "Cincinnati", "Ohio", "United States of America", 39.103118, -84.51202],
+    ["Talmud Yelodim Hebrew School", 48, "School", "Money", 5000, "Cincinnati", "Ohio", "United States of America", 39.103118, -84.51202],
+    ["Jews' Hospital", 49, "Hospital", "Money", 5000, "Cincinnati", "Ohio", "United States of America", 39.103118, -84.51202],
+    ["Tifereth Israel Congregation", 50, "Synagogue", "Money", 3000, "Cleveland", "Ohio", "United States of America", 41.49932, -81.694361],
+    ["Bnai El Congregation", 51, "Synagogue", "Money", 3000, "St. Louis", "Missouri", "United States of America", 38.627003, -90.199404],
+    ["Beth El Congregation", 52, "Synagogue", "Money", 3000, "Buffalo", "New York", "United States of America", 42.886447, -78.878369],
+    ["Beth El Congregation", 53, "Synagogue", "Money", 3000, "Albany", "New York", "United States of America", 42.652579, -73.756232],
+    ["Asylum of Orphan Boys", "54.1", "Charity", "Money", 5000, "Boston", "Massachusetts", "United States of America", 42.360083, -71.05888],
+    ["Female Orphan Asylum", "54.2", "Charity", "Money", 5000, "Boston", "Massachusetts", "United States of America", 42.360083, -71.05888],
+    ["Massachusetts General Hospital", "54.3", "Hospital", "Money", 10000, "Boston", "Massachusetts", "United States of America", 42.360083, -71.05888],
+    ["Synagogue of Newport, Rhode Island", 55, "Synagogue", "Money", 10000, "Newport", "Rhode Island", "United States of America", 41.490102, -71.312829],
+    ["Catharine Hays", 56, "Person", "Money", 5000, "Richmond", "Virginia", "United States of America", 37.540725, -77.436048],
+    ["Catharine, Harriet, and Julia Myers", 57, "Person", "Money", 7000, "Richmond", "Virginia", "United States of America", 37.540725, -77.436048],
+    ["Surviving Children of Samuel Myers", 58, "Person", "Money", 7000, "Richmond", "Virginia", "United States of America", 37.540725, -77.436048],
+    ["Supply Clapp Twing", 59, "Person", "Money", 5000, "Boston", "Massachusetts", "United States of America", 42.360083, -71.05888],
+    ["Rev. Isaac Leeser", 60, "Person", "Money", 3000, "Philadelphia", "Pennsylvania", "United States of America", 39.952584, -75.165222],
+    ["Rev. and Mrs. Moses N. Nathan", 61, "Person", "Money", 3000, "London", "", "United Kingdom", 51.507351, -0.127758],
+    ["Rev. Theadore Clapp", 62, "Person", "Money", 3000, "New Orleans", "Louisiana", "United States of America", 29.951066, -90.071532],
+    ["Ellen Brooks", 63, "Person", "Money", 10000, "Boston", "Massachusetts", "United States of America", 42.360083, -71.05888],
+    ["Mrs. M.D. Josephs", 64, "Person", "Money", 2500, "New Orleans", "Louisiana", "United States of America", 29.951066, -90.071532],
+    ["Rebecca Kursheedt", 65, "Person", "Money", 2500, "New Orleans", "Louisiana", "United States of America", 29.951066, -90.071532]
+  ];
+
+  const COLS = { name:0, bnum:1, type:2, gift:3, amt:4, city:5, state:6, country:7, lat:8, lng:9 };
+
+  const fmtMoney = (v) => v == null ? 'n/a' : '$' + v.toLocaleString('en-US');
+  const fmtMoneyShort = (v) => {
+    if (v == null) return 'n/a';
+    if (v >= 1000) return '$' + (v/1000).toFixed(v % 1000 === 0 ? 0 : 1) + 'k';
+    return '$' + v;
+  };
+
+  // ---------- Summary stats ----------
+  const totalAmt = DATA.reduce((s, r) => s + (r[COLS.amt] || 0), 0);
+  const beneficiaryCount = DATA.length;
+  const cityCount = new Set(DATA.map(r => r[COLS.city] + ', ' + r[COLS.country])).size;
+  const typeCount = new Set(DATA.map(r => r[COLS.type])).size;
+
+  document.getElementById('stat-total').textContent = '$' + totalAmt.toLocaleString('en-US');
+  document.getElementById('stat-beneficiaries').textContent = beneficiaryCount;
+  document.getElementById('stat-cities').textContent = cityCount;
+  document.getElementById('stat-types').textContent = typeCount;
+
+  // ---------- MAP ----------
+  const map = L.map('map', { scrollWheelZoom: false, zoomControl: true }).setView([41.5, -55], 3);
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd', maxZoom: 18
+  }).addTo(map);
+
+  // Aggregate by city
+  const cityMap = new Map();
+  DATA.forEach(r => {
+    const key = r[COLS.city] + '|' + r[COLS.state] + '|' + r[COLS.country];
+    if (!cityMap.has(key)) {
+      cityMap.set(key, {
+        city: r[COLS.city], state: r[COLS.state], country: r[COLS.country],
+        lat: r[COLS.lat], lng: r[COLS.lng],
+        total: 0, count: 0, beneficiaries: []
+      });
+    }
+    const c = cityMap.get(key);
+    c.total += (r[COLS.amt] || 0);
+    c.count += 1;
+    c.beneficiaries.push({ name: r[COLS.name], type: r[COLS.type], amt: r[COLS.amt] });
+  });
+
+  const radiusFor = (v) => {
+    if (v <= 3000) return 5;
+    if (v <= 25000) return 8;
+    if (v <= 75000) return 13;
+    return 18;
+  };
+
+  cityMap.forEach(c => {
+    const marker = L.circleMarker([c.lat, c.lng], {
+      radius: radiusFor(c.total),
+      color: '#5A1F12', weight: 1.5,
+      fillColor: '#7A2E1F', fillOpacity: 0.7
+    }).addTo(map);
+
+    const locLabel = c.state ? `${c.city}, ${c.state}` : `${c.city}, ${c.country}`;
+    const listItems = c.beneficiaries
+      .sort((a, b) => (b.amt || 0) - (a.amt || 0))
+      .map(b => `<li><span>${b.name} <em style="color:var(--ink-faint);font-size:0.85em;">— ${b.type}</em></span><span class="amt">${fmtMoneyShort(b.amt)}</span></li>`)
+      .join('');
+
+    marker.bindPopup(`
+      <div style="min-width:220px;max-width:300px;">
+        <p class="popup-title">${locLabel}</p>
+        <p class="popup-sub">${c.count} bequest${c.count > 1 ? 's' : ''} · ${fmtMoney(c.total)} total</p>
+        <ul class="popup-list">${listItems}</ul>
+      </div>
+    `);
+  });
+
+  // ---------- CHARTS ----------
+  Chart.defaults.font.family = "'Crimson Pro', Georgia, serif";
+  Chart.defaults.font.size = 13;
+  Chart.defaults.color = '#5C4E3A';
+
+  // City chart data
+  const cityAgg = [...cityMap.values()]
+    .map(c => ({ label: c.state ? `${c.city}, ${c.state}` : `${c.city}, ${c.country}`, total: c.total, count: c.count }))
+    .sort((a, b) => b.total - a.total);
+
+  new Chart(document.getElementById('cityChart'), {
+    type: 'bar',
+    data: {
+      labels: cityAgg.map(c => c.label),
+      datasets: [{
+        data: cityAgg.map(c => c.total),
+        backgroundColor: '#7A2E1F',
+        hoverBackgroundColor: '#5A1F12',
+        borderRadius: 1,
+        borderWidth: 0,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      maintainAspectRatio: false,
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1E1810', titleColor: '#F2E9D4', bodyColor: '#F2E9D4',
+          titleFont: { family: "'Playfair Display', serif", weight: '700', size: 13 },
+          bodyFont: { family: "'Crimson Pro', serif", size: 13 },
+          padding: 10, cornerRadius: 0, displayColors: false,
+          callbacks: {
+            label: (ctx) => {
+              const c = cityAgg[ctx.dataIndex];
+              return [fmtMoney(c.total), `${c.count} bequest${c.count > 1 ? 's' : ''}`];
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { callback: (v) => fmtMoneyShort(v), color: '#8A7A60' },
+          grid: { color: 'rgba(196, 182, 154, 0.4)', drawTicks: false },
+          border: { color: '#C4B69A' }
+        },
+        y: {
+          ticks: { color: '#1E1810', font: { size: 12.5 } },
+          grid: { display: false },
+          border: { color: '#1E1810' }
+        }
+      }
+    }
+  });
+
+  // Type chart
+  const typeAgg = {};
+  DATA.forEach(r => {
+    const t = r[COLS.type] || 'Unspecified';
+    typeAgg[t] = (typeAgg[t] || 0) + (r[COLS.amt] || 0);
+  });
+  const typeEntries = Object.entries(typeAgg).sort((a, b) => b[1] - a[1]);
+
+  // Color palette aligned to pill colors
+  const TYPE_COLORS = {
+    'Charity': '#8A5A2E', 'Synagogue': '#5B3F70', 'Person': '#7A2E1F',
+    'City Government': '#B58A3D', 'School': '#3F5B36', 'Hospital': '#36505F',
+    'Memorial': '#4A4A4A', 'Library': '#6E5840', 'Rabbi': '#7A6249'
+  };
+
+  new Chart(document.getElementById('typeChart'), {
+    type: 'bar',
+    data: {
+      labels: typeEntries.map(t => t[0]),
+      datasets: [{
+        data: typeEntries.map(t => t[1]),
+        backgroundColor: typeEntries.map(t => TYPE_COLORS[t[0]] || '#8A7A60'),
+        borderRadius: 1, borderWidth: 0,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      maintainAspectRatio: false,
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1E1810', titleColor: '#F2E9D4', bodyColor: '#F2E9D4',
+          titleFont: { family: "'Playfair Display', serif", weight: '700' },
+          bodyFont: { family: "'Crimson Pro', serif" },
+          padding: 10, cornerRadius: 0, displayColors: false,
+          callbacks: { label: (ctx) => fmtMoney(ctx.parsed.x) }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { callback: (v) => fmtMoneyShort(v), color: '#8A7A60' },
+          grid: { color: 'rgba(196, 182, 154, 0.4)', drawTicks: false },
+          border: { color: '#C4B69A' }
+        },
+        y: {
+          ticks: { color: '#1E1810', font: { size: 12.5 } },
+          grid: { display: false },
+          border: { color: '#1E1810' }
+        }
+      }
+    }
+  });
+
+  // ---------- LEDGER TABLE ----------
+  const tbody = document.querySelector('#ledger tbody');
+  const searchInput = document.getElementById('search');
+  const typeFilter = document.getElementById('typeFilter');
+  const rowCount = document.getElementById('rowCount');
+
+  // Populate type filter
+  const allTypes = [...new Set(DATA.map(r => r[COLS.type]))].sort();
+  allTypes.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t; opt.textContent = t;
+    typeFilter.appendChild(opt);
+  });
+
+  let sortKey = 1, sortDir = 1;
+
+  function pillClass(t) {
+    const tl = (t || '').toLowerCase();
+    if (tl.includes('charity')) return 'charity';
+    if (tl.includes('synagogue')) return 'synagogue';
+    if (tl.includes('person')) return 'person';
+    if (tl.includes('school')) return 'school';
+    if (tl.includes('hospital')) return 'hospital';
+    if (tl.includes('city')) return 'city';
+    return '';
+  }
+
+  function renderTable() {
+    const q = searchInput.value.trim().toLowerCase();
+    const ft = typeFilter.value;
+
+    let rows = DATA.filter(r => {
+      if (ft && r[COLS.type] !== ft) return false;
+      if (!q) return true;
+      return r.some(v => String(v).toLowerCase().includes(q));
+    });
+
+    // Sort
+    rows.sort((a, b) => {
+      let va = a[sortKey], vb = b[sortKey];
+      if (sortKey === COLS.amt) { va = va || -1; vb = vb || -1; }
+      if (sortKey === COLS.bnum) {
+        // Bequest number can be string ("54.1") or number
+        va = parseFloat(va); vb = parseFloat(vb);
+      }
+      if (typeof va === 'string') va = va.toLowerCase();
+      if (typeof vb === 'string') vb = vb.toLowerCase();
+      if (va < vb) return -1 * sortDir;
+      if (va > vb) return 1 * sortDir;
+      return 0;
+    });
+
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td class="bequest-no">${r[COLS.bnum]}</td>
+        <td>${r[COLS.name]}</td>
+        <td><span class="pill ${pillClass(r[COLS.type])}">${r[COLS.type] || '—'}</span></td>
+        <td><em style="color:var(--ink-soft);">${r[COLS.gift]}</em></td>
+        <td class="amt">${r[COLS.amt] == null ? '<em style="color:var(--ink-faint);">n/a</em>' : '$' + r[COLS.amt].toLocaleString()}</td>
+        <td>${r[COLS.city]}</td>
+        <td>${r[COLS.state] || '<em style="color:var(--ink-faint);">—</em>'}</td>
+        <td>${r[COLS.country]}</td>
+      </tr>
+    `).join('');
+
+    rowCount.textContent = rows.length === DATA.length
+      ? `Showing all ${DATA.length} bequests`
+      : `Showing ${rows.length} of ${DATA.length} bequests`;
+
+    // Update sort indicators
+    document.querySelectorAll('#ledger thead th').forEach(th => {
+      const k = parseInt(th.dataset.key);
+      const ind = th.querySelector('.sort-ind');
+      if (ind) ind.remove();
+      if (k === sortKey) {
+        const span = document.createElement('span');
+        span.className = 'sort-ind';
+        span.textContent = sortDir === 1 ? '▲' : '▼';
+        th.appendChild(span);
+      }
+    });
+  }
+
+  document.querySelectorAll('#ledger thead th').forEach(th => {
+    th.addEventListener('click', () => {
+      const k = parseInt(th.dataset.key);
+      if (k === sortKey) sortDir *= -1;
+      else { sortKey = k; sortDir = 1; }
+      renderTable();
+    });
+  });
+
+  searchInput.addEventListener('input', renderTable);
+  typeFilter.addEventListener('change', renderTable);
+
+  renderTable();
+</script>
+
+</body>
+</html>
