@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#F2E9D4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1A1612" media="(prefers-color-scheme: dark)">
 <title>Touro Will Beneficiaries · 1854</title>
 <meta name="description" content="An interactive dashboard documenting the 65 bequests in the 1854 will of Judah Touro (1775–1854), American merchant and philanthropist.">
 
@@ -12,8 +14,23 @@
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 
+<!-- Set theme BEFORE first paint to prevent flash -->
+<script>
+  (function() {
+    try {
+      var saved = localStorage.getItem('touro-theme');
+      var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var theme = saved || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    } catch (e) {
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  })();
+</script>
+
 <style>
-  :root {
+  /* ---------- LIGHT THEME (default) ---------- */
+  :root, [data-theme="light"] {
     --bg: #F2E9D4;
     --bg-soft: #ECE0C5;
     --surface: #F8F0DB;
@@ -26,6 +43,73 @@
     --oxblood-deep: #5A1F12;
     --ochre: #B58A3D;
     --ochre-soft: #D4B271;
+    --grain-1: rgba(122, 46, 31, 0.04);
+    --grain-2: rgba(30, 24, 16, 0.025);
+    --map-filter: sepia(0.18) saturate(0.85);
+    --shadow-pop: 4px 4px 0 rgba(30, 24, 16, 0.15);
+    --grid-line: rgba(196, 182, 154, 0.4);
+    /* Pill colors */
+    --pill-charity-bd: #C2956C;     --pill-charity-fg: #8A5A2E;
+    --pill-synagogue-bd: #8A6B97;   --pill-synagogue-fg: #5B3F70;
+    --pill-person-bd: #7A2E1F;      --pill-person-fg: #7A2E1F;
+    --pill-school-bd: #6B8A5E;      --pill-school-fg: #3F5B36;
+    --pill-hospital-bd: #5E7A8A;    --pill-hospital-fg: #36505F;
+    --pill-city-bd: #B58A3D;        --pill-city-fg: #8A6420;
+    /* Chart colors */
+    --chart-bar: #7A2E1F;
+    --chart-bar-hover: #5A1F12;
+    --chart-charity: #8A5A2E;
+    --chart-synagogue: #5B3F70;
+    --chart-person: #7A2E1F;
+    --chart-city-gov: #B58A3D;
+    --chart-school: #3F5B36;
+    --chart-hospital: #36505F;
+    --chart-memorial: #4A4A4A;
+    --chart-library: #6E5840;
+    --chart-rabbi: #7A6249;
+  }
+
+  /* ---------- DARK THEME ---------- */
+  [data-theme="dark"] {
+    --bg: #1A1612;
+    --bg-soft: #221E18;
+    --surface: #26211B;
+    --ink: #E8DDC4;
+    --ink-soft: #B5A687;
+    --ink-faint: #807257;
+    --rule: #3D352A;
+    --rule-soft: #2E281F;
+    --oxblood: #D87560;
+    --oxblood-deep: #B85944;
+    --ochre: #D4B271;
+    --ochre-soft: #B58A3D;
+    --grain-1: rgba(216, 117, 96, 0.05);
+    --grain-2: rgba(232, 221, 196, 0.02);
+    --map-filter: brightness(0.85) saturate(0.7);
+    --shadow-pop: 4px 4px 0 rgba(0, 0, 0, 0.4);
+    --grid-line: rgba(61, 53, 42, 0.6);
+    /* Pill colors — softened for dark bg */
+    --pill-charity-bd: #B8855A;     --pill-charity-fg: #D9A878;
+    --pill-synagogue-bd: #8A6B97;   --pill-synagogue-fg: #B89BC4;
+    --pill-person-bd: #D87560;      --pill-person-fg: #D87560;
+    --pill-school-bd: #7CA46C;      --pill-school-fg: #9CC68C;
+    --pill-hospital-bd: #6F92A4;    --pill-hospital-fg: #8FB2C4;
+    --pill-city-bd: #D4B271;        --pill-city-fg: #DDC089;
+    /* Chart colors — calibrated for dark bg */
+    --chart-bar: #D87560;
+    --chart-bar-hover: #E58A75;
+    --chart-charity: #D9A878;
+    --chart-synagogue: #B89BC4;
+    --chart-person: #D87560;
+    --chart-city-gov: #DDC089;
+    --chart-school: #9CC68C;
+    --chart-hospital: #8FB2C4;
+    --chart-memorial: #999999;
+    --chart-library: #C2A88A;
+    --chart-rabbi: #C4A788;
+  }
+
+  :root {
     --display: 'Playfair Display', 'Times New Roman', serif;
     --body: 'Crimson Pro', Georgia, serif;
   }
@@ -41,15 +125,51 @@
     font-feature-settings: 'onum' 1, 'kern' 1;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    /* subtle paper grain */
     background-image:
-      radial-gradient(rgba(122, 46, 31, 0.04) 1px, transparent 1px),
-      radial-gradient(rgba(30, 24, 16, 0.025) 1px, transparent 1px);
+      radial-gradient(var(--grain-1) 1px, transparent 1px),
+      radial-gradient(var(--grain-2) 1px, transparent 1px);
     background-size: 32px 32px, 17px 17px;
     background-position: 0 0, 8px 8px;
+    transition: background-color 0.25s, color 0.25s;
   }
 
   .wrap { max-width: 1200px; margin: 0 auto; padding: 3rem 1.5rem 4rem; }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1000;
+    background: var(--surface);
+    border: 1px solid var(--ink);
+    color: var(--ink);
+    width: 42px;
+    height: 42px;
+    border-radius: 2px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, transform 0.15s;
+    box-shadow: var(--shadow-pop);
+    font-family: var(--body);
+  }
+  .theme-toggle:hover {
+    background: var(--bg-soft);
+    transform: translate(-1px, -1px);
+    box-shadow: 5px 5px 0 rgba(30, 24, 16, 0.18);
+  }
+  .theme-toggle:active { transform: translate(1px, 1px); box-shadow: 2px 2px 0 rgba(30, 24, 16, 0.15); }
+  .theme-toggle svg { width: 18px; height: 18px; stroke: var(--ink); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .theme-toggle .icon-sun { display: none; }
+  .theme-toggle .icon-moon { display: block; }
+  [data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+  [data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+  @media (max-width: 600px) {
+    .theme-toggle { width: 38px; height: 38px; top: 0.7rem; right: 0.7rem; }
+    .theme-toggle svg { width: 16px; height: 16px; }
+  }
 
   /* ---------- Masthead ---------- */
   .masthead {
@@ -83,7 +203,7 @@
   h1.title {
     font-family: var(--display);
     font-weight: 900;
-    font-size: clamp(2.4rem, 5.5vw, 4.4rem);
+    font-size: clamp(2.2rem, 5.5vw, 4.4rem);
     line-height: 1.02;
     letter-spacing: -0.01em;
     margin: 0 0 0.5rem;
@@ -98,7 +218,7 @@
     font-family: var(--display);
     font-style: italic;
     font-weight: 400;
-    font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+    font-size: clamp(1rem, 1.6vw, 1.35rem);
     color: var(--ink-soft);
     max-width: 56ch;
     margin: 0.7rem auto 0;
@@ -113,9 +233,7 @@
   }
 
   /* ---------- Section heads ---------- */
-  .section {
-    margin-top: 3.5rem;
-  }
+  .section { margin-top: 3.5rem; }
   .section-head {
     display: flex;
     align-items: baseline;
@@ -123,6 +241,7 @@
     margin: 0 0 1.4rem;
     padding-bottom: 0.6rem;
     border-bottom: 1px solid var(--rule);
+    flex-wrap: wrap;
   }
   .section-num {
     font-family: var(--display);
@@ -135,7 +254,7 @@
   .section-title {
     font-family: var(--display);
     font-weight: 700;
-    font-size: clamp(1.4rem, 2.3vw, 1.85rem);
+    font-size: clamp(1.3rem, 2.3vw, 1.85rem);
     margin: 0;
     color: var(--ink);
     letter-spacing: -0.005em;
@@ -177,7 +296,7 @@
   .stat-num {
     font-family: var(--display);
     font-weight: 700;
-    font-size: clamp(2rem, 4vw, 2.6rem);
+    font-size: clamp(1.7rem, 4vw, 2.6rem);
     line-height: 1;
     color: var(--oxblood);
     letter-spacing: -0.015em;
@@ -185,7 +304,7 @@
   }
   .stat-label {
     margin-top: 0.6rem;
-    font-size: 0.78rem;
+    font-size: 0.74rem;
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: var(--ink-faint);
@@ -193,13 +312,8 @@
   .stat-sub {
     margin-top: 0.3rem;
     font-style: italic;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     color: var(--ink-soft);
-  }
-
-  @media (max-width: 720px) {
-    .stats { grid-template-columns: repeat(2, 1fr); }
-    .section-lede { display: none; }
   }
 
   /* ---------- Map ---------- */
@@ -208,7 +322,8 @@
     width: 100%;
     border: 1px solid var(--ink);
     background: var(--surface);
-    filter: sepia(0.18) saturate(0.85);
+    filter: var(--map-filter);
+    transition: filter 0.25s;
   }
   .map-legend {
     margin-top: 0.8rem;
@@ -236,9 +351,12 @@
     color: var(--ink);
     border-radius: 2px;
     border: 1px solid var(--ink);
-    box-shadow: 4px 4px 0 rgba(30, 24, 16, 0.15);
+    box-shadow: var(--shadow-pop);
   }
   .leaflet-popup-tip { background: var(--surface); border: 1px solid var(--ink); }
+  .leaflet-container a.leaflet-popup-close-button { color: var(--ink-soft); }
+  .leaflet-control-attribution { background: var(--surface) !important; color: var(--ink-soft) !important; }
+  .leaflet-control-attribution a { color: var(--oxblood) !important; }
   .popup-title {
     font-family: var(--display);
     font-weight: 700;
@@ -258,14 +376,12 @@
   .popup-list li { padding: 0.15rem 0; display: flex; justify-content: space-between; gap: 1rem; }
   .popup-list .amt { font-feature-settings: 'tnum' 1; color: var(--ink-soft); }
 
-  /* ---------- Charts ---------- */
+  /* ---------- Charts (stacked) ---------- */
   .charts {
     display: grid;
-    grid-template-columns: 1.4fr 1fr;
+    grid-template-columns: 1fr;
     gap: 1.5rem;
-    align-items: start;
   }
-  @media (max-width: 900px) { .charts { grid-template-columns: 1fr; } }
   .chart-card {
     background: var(--surface);
     border: 1px solid var(--rule);
@@ -331,6 +447,15 @@
     background: var(--surface);
     max-height: 600px;
     overflow: auto;
+    position: relative;
+  }
+  .scroll-hint {
+    display: none;
+    text-align: center;
+    font-style: italic;
+    color: var(--ink-faint);
+    font-size: 0.82rem;
+    margin-top: 0.5rem;
   }
   table.ledger {
     width: 100%;
@@ -380,12 +505,12 @@
     letter-spacing: 0.04em;
     white-space: nowrap;
   }
-  .pill.charity { border-color: #C2956C; color: #8A5A2E; }
-  .pill.synagogue { border-color: #8A6B97; color: #5B3F70; }
-  .pill.person { border-color: #7A2E1F; color: #7A2E1F; }
-  .pill.school { border-color: #6B8A5E; color: #3F5B36; }
-  .pill.hospital { border-color: #5E7A8A; color: #36505F; }
-  .pill.city { border-color: #B58A3D; color: #8A6420; }
+  .pill.charity { border-color: var(--pill-charity-bd); color: var(--pill-charity-fg); }
+  .pill.synagogue { border-color: var(--pill-synagogue-bd); color: var(--pill-synagogue-fg); }
+  .pill.person { border-color: var(--pill-person-bd); color: var(--pill-person-fg); }
+  .pill.school { border-color: var(--pill-school-bd); color: var(--pill-school-fg); }
+  .pill.hospital { border-color: var(--pill-hospital-bd); color: var(--pill-hospital-fg); }
+  .pill.city { border-color: var(--pill-city-bd); color: var(--pill-city-fg); }
 
   /* ---------- Footer ---------- */
   footer {
@@ -412,9 +537,94 @@
   }
   footer p { margin: 0.5rem 0; max-width: 60ch; margin-left: auto; margin-right: auto; }
   footer em { color: var(--ink-faint); }
+  footer a { color: var(--oxblood); }
+
+  /* =========================================
+     MOBILE BREAKPOINTS
+     ========================================= */
+
+  /* Tablet */
+  @media (max-width: 900px) {
+    .wrap { padding: 2.2rem 1.2rem 3rem; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .section { margin-top: 2.8rem; }
+    .section-lede { display: none; }
+    #cityChart { height: 480px; }
+    #typeChart { height: 340px; }
+    #map { height: 440px; }
+  }
+
+  /* Phone */
+  @media (max-width: 600px) {
+    body { font-size: 16.5px; }
+    .wrap { padding: 1.5rem 1rem 2.5rem; }
+    .masthead { padding-bottom: 1.5rem; }
+    .eyebrow { font-size: 0.7rem; letter-spacing: 0.22em; margin-bottom: 0.9rem; }
+    .eyebrow .ornament { margin: 0 0.4em; }
+    .dek { font-size: 1rem; }
+    .byline { font-size: 0.72rem; margin-top: 1rem; }
+
+    .section { margin-top: 2.2rem; }
+    .section-head { gap: 0.6rem; margin-bottom: 1rem; }
+    .section-title { font-size: 1.25rem; }
+
+    .stats { grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+    .stat { padding: 1.1rem 0.8rem 1rem; }
+    .stat-label { font-size: 0.68rem; letter-spacing: 0.14em; }
+    .stat-sub { font-size: 0.8rem; }
+
+    #map { height: 360px; }
+    .map-legend { gap: 0.9rem; font-size: 0.8rem; }
+
+    .chart-card { padding: 1rem 0.9rem 0.7rem; }
+    .chart-title { font-size: 1.05rem; }
+    .chart-sub { font-size: 0.83rem; }
+    #cityChart { height: 560px; }
+    #typeChart { height: 320px; }
+
+    .table-controls { gap: 0.6rem; }
+    .search-input, .filter-select { font-size: 0.95rem; padding: 0.55rem 0.75rem; }
+    .row-count { width: 100%; font-size: 0.82rem; }
+    .scroll-hint { display: block; }
+    table.ledger { font-size: 0.88rem; }
+    table.ledger thead th { padding: 0.55rem 0.7rem; font-size: 0.7rem; }
+    table.ledger tbody td { padding: 0.5rem 0.7rem; }
+
+    footer { font-size: 0.82rem; margin-top: 3rem; }
+  }
+
+  /* Very small phones */
+  @media (max-width: 380px) {
+    .stats { grid-template-columns: 1fr; }
+    h1.title { font-size: 1.9rem; }
+  }
+
+  /* Print */
+  @media print {
+    .theme-toggle, #map .leaflet-control-zoom { display: none !important; }
+    body { background: white; color: black; }
+  }
 </style>
 </head>
 <body>
+
+<!-- Theme toggle button -->
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+  <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>
+  <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+    <circle cx="12" cy="12" r="4.5"/>
+    <line x1="12" y1="2" x2="12" y2="4.5"/>
+    <line x1="12" y1="19.5" x2="12" y2="22"/>
+    <line x1="2" y1="12" x2="4.5" y2="12"/>
+    <line x1="19.5" y1="12" x2="22" y2="12"/>
+    <line x1="4.93" y1="4.93" x2="6.7" y2="6.7"/>
+    <line x1="17.3" y1="17.3" x2="19.07" y2="19.07"/>
+    <line x1="4.93" y1="19.07" x2="6.7" y2="17.3"/>
+    <line x1="17.3" y1="6.7" x2="19.07" y2="4.93"/>
+  </svg>
+</button>
 
 <div class="wrap">
 
@@ -481,8 +691,6 @@
         <p class="chart-sub">Total bequests aggregated to each city of residence.</p>
         <div class="chart-wrap"><canvas id="cityChart"></canvas></div>
       </div>
-  </section>
-  <section class="section">
       <div class="chart-card">
         <h3 class="chart-title">By Kind of Recipient</h3>
         <p class="chart-sub">Touro gave most generously to charities and the City of Newport.</p>
@@ -522,13 +730,14 @@
         <tbody></tbody>
       </table>
     </div>
+    <p class="scroll-hint">← swipe to see more columns →</p>
   </section>
 
   <!-- ============ FOOTER ============ -->
   <footer>
     <p><span class="ornament">❦</span> &nbsp; <em>Compiled from the last will and testament of Judah Touro, dated January 1854.</em> &nbsp; <span class="ornament">❦</span></p>
-    <span><p>Created and Developed by Laura Newman Eckstein and <a href="https://www.library.upenn.edu/kislak/judaicadh" style="color:var(--oxblood);">Judaica Digital Humanities at Penn Libraries</a></p>
-    <p>Built with <a href="https://leafletjs.com" style="color:var(--oxblood);">Leaflet</a>, <a href="https://www.chartjs.org" style="color:var(--oxblood);">Chart.js</a>, <a href="https://claude.ai" style="color:var(--oxblood);">Claude</a></p>
+    <p>Created and Developed by Laura Newman Eckstein and <a href="https://www.library.upenn.edu/kislak/judaicadh">Judaica Digital Humanities at Penn Libraries</a>.</p>
+    <p>Built with <a href="https://leafletjs.com">Leaflet</a>, <a href="https://www.chartjs.org">Chart.js</a>, and <a href="https://claude.ai">Claude</a>.</p>
   </footer>
 
 </div>
@@ -616,24 +825,36 @@
     return '$' + v;
   };
 
+  // Read CSS variable from current theme
+  const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
   // ---------- Summary stats ----------
   const totalAmt = DATA.reduce((s, r) => s + (r[COLS.amt] || 0), 0);
-  const beneficiaryCount = DATA.length;
-  const cityCount = new Set(DATA.map(r => r[COLS.city] + ', ' + r[COLS.country])).size;
-  const typeCount = new Set(DATA.map(r => r[COLS.type])).size;
-
   document.getElementById('stat-total').textContent = '$' + totalAmt.toLocaleString('en-US');
-  document.getElementById('stat-beneficiaries').textContent = beneficiaryCount;
-  document.getElementById('stat-cities').textContent = cityCount;
-  document.getElementById('stat-types').textContent = typeCount;
+  document.getElementById('stat-beneficiaries').textContent = DATA.length;
+  document.getElementById('stat-cities').textContent = new Set(DATA.map(r => r[COLS.city] + ', ' + r[COLS.country])).size;
+  document.getElementById('stat-types').textContent = new Set(DATA.map(r => r[COLS.type])).size;
 
   // ---------- MAP ----------
   const map = L.map('map', { scrollWheelZoom: false, zoomControl: true }).setView([41.5, -55], 3);
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    subdomains: 'abcd', maxZoom: 18
-  }).addTo(map);
+  const tileLayers = {
+    light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd', maxZoom: 18
+    }),
+    dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd', maxZoom: 18
+    })
+  };
+
+  let currentTileLayer = null;
+  function setMapTheme(theme) {
+    if (currentTileLayer) map.removeLayer(currentTileLayer);
+    currentTileLayer = tileLayers[theme];
+    currentTileLayer.addTo(map);
+  }
 
   // Aggregate by city
   const cityMap = new Map();
@@ -659,85 +880,44 @@
     return 18;
   };
 
-  cityMap.forEach(c => {
-    const marker = L.circleMarker([c.lat, c.lng], {
-      radius: radiusFor(c.total),
-      color: '#5A1F12', weight: 1.5,
-      fillColor: '#7A2E1F', fillOpacity: 0.7
-    }).addTo(map);
+  const markers = [];
+  function renderMarkers() {
+    // Remove old markers
+    markers.forEach(m => map.removeLayer(m));
+    markers.length = 0;
+    const ox = cssVar('--oxblood');
+    const oxDeep = cssVar('--oxblood-deep');
+    cityMap.forEach(c => {
+      const marker = L.circleMarker([c.lat, c.lng], {
+        radius: radiusFor(c.total),
+        color: oxDeep, weight: 1.5,
+        fillColor: ox, fillOpacity: 0.7
+      }).addTo(map);
 
-    const locLabel = c.state ? `${c.city}, ${c.state}` : `${c.city}, ${c.country}`;
-    const listItems = c.beneficiaries
-      .sort((a, b) => (b.amt || 0) - (a.amt || 0))
-      .map(b => `<li><span>${b.name} <em style="color:var(--ink-faint);font-size:0.85em;">— ${b.type}</em></span><span class="amt">${fmtMoneyShort(b.amt)}</span></li>`)
-      .join('');
+      const locLabel = c.state ? `${c.city}, ${c.state}` : `${c.city}, ${c.country}`;
+      const listItems = c.beneficiaries
+        .sort((a, b) => (b.amt || 0) - (a.amt || 0))
+        .map(b => `<li><span>${b.name} <em style="color:var(--ink-faint);font-size:0.85em;">— ${b.type}</em></span><span class="amt">${fmtMoneyShort(b.amt)}</span></li>`)
+        .join('');
 
-    marker.bindPopup(`
-      <div style="min-width:220px;max-width:300px;">
-        <p class="popup-title">${locLabel}</p>
-        <p class="popup-sub">${c.count} bequest${c.count > 1 ? 's' : ''} · ${fmtMoney(c.total)} total</p>
-        <ul class="popup-list">${listItems}</ul>
-      </div>
-    `);
-  });
+      marker.bindPopup(`
+        <div style="min-width:220px;max-width:300px;">
+          <p class="popup-title">${locLabel}</p>
+          <p class="popup-sub">${c.count} bequest${c.count > 1 ? 's' : ''} · ${fmtMoney(c.total)} total</p>
+          <ul class="popup-list">${listItems}</ul>
+        </div>
+      `);
+      markers.push(marker);
+    });
+  }
 
   // ---------- CHARTS ----------
-  Chart.defaults.font.family = "'Crimson Pro', Georgia, serif";
-  Chart.defaults.font.size = 13;
-  Chart.defaults.color = '#5C4E3A';
+  let cityChart = null, typeChart = null;
 
-  // City chart data
   const cityAgg = [...cityMap.values()]
     .map(c => ({ label: c.state ? `${c.city}, ${c.state}` : `${c.city}, ${c.country}`, total: c.total, count: c.count }))
     .sort((a, b) => b.total - a.total);
 
-  new Chart(document.getElementById('cityChart'), {
-    type: 'bar',
-    data: {
-      labels: cityAgg.map(c => c.label),
-      datasets: [{
-        data: cityAgg.map(c => c.total),
-        backgroundColor: '#7A2E1F',
-        hoverBackgroundColor: '#5A1F12',
-        borderRadius: 1,
-        borderWidth: 0,
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      maintainAspectRatio: false,
-      responsive: true,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#1E1810', titleColor: '#F2E9D4', bodyColor: '#F2E9D4',
-          titleFont: { family: "'Playfair Display', serif", weight: '700', size: 13 },
-          bodyFont: { family: "'Crimson Pro', serif", size: 13 },
-          padding: 10, cornerRadius: 0, displayColors: false,
-          callbacks: {
-            label: (ctx) => {
-              const c = cityAgg[ctx.dataIndex];
-              return [fmtMoney(c.total), `${c.count} bequest${c.count > 1 ? 's' : ''}`];
-            }
-          }
-        }
-      },
-      scales: {
-        x: {
-          ticks: { callback: (v) => fmtMoneyShort(v), color: '#8A7A60' },
-          grid: { color: 'rgba(196, 182, 154, 0.4)', drawTicks: false },
-          border: { color: '#C4B69A' }
-        },
-        y: {
-          ticks: { color: '#1E1810', font: { size: 12.5 } },
-          grid: { display: false },
-          border: { color: '#1E1810' }
-        }
-      }
-    }
-  });
-
-  // Type chart
   const typeAgg = {};
   DATA.forEach(r => {
     const t = r[COLS.type] || 'Unspecified';
@@ -745,50 +925,116 @@
   });
   const typeEntries = Object.entries(typeAgg).sort((a, b) => b[1] - a[1]);
 
-  // Color palette aligned to pill colors
-  const TYPE_COLORS = {
-    'Charity': '#8A5A2E', 'Synagogue': '#5B3F70', 'Person': '#7A2E1F',
-    'City Government': '#B58A3D', 'School': '#3F5B36', 'Hospital': '#36505F',
-    'Memorial': '#4A4A4A', 'Library': '#6E5840', 'Rabbi': '#7A6249'
-  };
+  function typeColor(t) {
+    const map = {
+      'Charity': '--chart-charity', 'Synagogue': '--chart-synagogue',
+      'Person': '--chart-person', 'City Government': '--chart-city-gov',
+      'School': '--chart-school', 'Hospital': '--chart-hospital',
+      'Memorial': '--chart-memorial', 'Library': '--chart-library', 'Rabbi': '--chart-rabbi'
+    };
+    return cssVar(map[t] || '--ink-faint');
+  }
 
-  new Chart(document.getElementById('typeChart'), {
-    type: 'bar',
-    data: {
-      labels: typeEntries.map(t => t[0]),
-      datasets: [{
-        data: typeEntries.map(t => t[1]),
-        backgroundColor: typeEntries.map(t => TYPE_COLORS[t[0]] || '#8A7A60'),
-        borderRadius: 1, borderWidth: 0,
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      maintainAspectRatio: false,
-      responsive: true,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#1E1810', titleColor: '#F2E9D4', bodyColor: '#F2E9D4',
-          titleFont: { family: "'Playfair Display', serif", weight: '700' },
-          bodyFont: { family: "'Crimson Pro', serif" },
-          padding: 10, cornerRadius: 0, displayColors: false,
-          callbacks: { label: (ctx) => fmtMoney(ctx.parsed.x) }
-        }
+  function renderCharts() {
+    if (cityChart) cityChart.destroy();
+    if (typeChart) typeChart.destroy();
+
+    Chart.defaults.font.family = "'Crimson Pro', Georgia, serif";
+    Chart.defaults.font.size = 13;
+    Chart.defaults.color = cssVar('--ink-soft');
+
+    const tickColor = cssVar('--ink-faint');
+    const labelColor = cssVar('--ink');
+    const gridColor = cssVar('--grid-line');
+    const ruleColor = cssVar('--rule');
+    const inkColor = cssVar('--ink');
+    const bgColor = cssVar('--bg');
+    const tooltipBg = cssVar('--ink');
+    const tooltipFg = cssVar('--bg');
+
+    cityChart = new Chart(document.getElementById('cityChart'), {
+      type: 'bar',
+      data: {
+        labels: cityAgg.map(c => c.label),
+        datasets: [{
+          data: cityAgg.map(c => c.total),
+          backgroundColor: cssVar('--chart-bar'),
+          hoverBackgroundColor: cssVar('--chart-bar-hover'),
+          borderRadius: 1, borderWidth: 0,
+        }]
       },
-      scales: {
-        x: {
-          ticks: { callback: (v) => fmtMoneyShort(v), color: '#8A7A60' },
-          grid: { color: 'rgba(196, 182, 154, 0.4)', drawTicks: false },
-          border: { color: '#C4B69A' }
+      options: {
+        indexAxis: 'y', maintainAspectRatio: false, responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: tooltipBg, titleColor: tooltipFg, bodyColor: tooltipFg,
+            titleFont: { family: "'Playfair Display', serif", weight: '700', size: 13 },
+            bodyFont: { family: "'Crimson Pro', serif", size: 13 },
+            padding: 10, cornerRadius: 0, displayColors: false,
+            callbacks: {
+              label: (ctx) => {
+                const c = cityAgg[ctx.dataIndex];
+                return [fmtMoney(c.total), `${c.count} bequest${c.count > 1 ? 's' : ''}`];
+              }
+            }
+          }
         },
-        y: {
-          ticks: { color: '#1E1810', font: { size: 12.5 } },
-          grid: { display: false },
-          border: { color: '#1E1810' }
+        scales: {
+          x: { ticks: { callback: (v) => fmtMoneyShort(v), color: tickColor },
+               grid: { color: gridColor, drawTicks: false }, border: { color: ruleColor } },
+          y: { ticks: { color: labelColor, font: { size: 12.5 } },
+               grid: { display: false }, border: { color: inkColor } }
         }
       }
-    }
+    });
+
+    typeChart = new Chart(document.getElementById('typeChart'), {
+      type: 'bar',
+      data: {
+        labels: typeEntries.map(t => t[0]),
+        datasets: [{
+          data: typeEntries.map(t => t[1]),
+          backgroundColor: typeEntries.map(t => typeColor(t[0])),
+          borderRadius: 1, borderWidth: 0,
+        }]
+      },
+      options: {
+        indexAxis: 'y', maintainAspectRatio: false, responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: tooltipBg, titleColor: tooltipFg, bodyColor: tooltipFg,
+            titleFont: { family: "'Playfair Display', serif", weight: '700' },
+            bodyFont: { family: "'Crimson Pro', serif" },
+            padding: 10, cornerRadius: 0, displayColors: false,
+            callbacks: { label: (ctx) => fmtMoney(ctx.parsed.x) }
+          }
+        },
+        scales: {
+          x: { ticks: { callback: (v) => fmtMoneyShort(v), color: tickColor },
+               grid: { color: gridColor, drawTicks: false }, border: { color: ruleColor } },
+          y: { ticks: { color: labelColor, font: { size: 12.5 } },
+               grid: { display: false }, border: { color: inkColor } }
+        }
+      }
+    });
+  }
+
+  // ---------- THEME TOGGLE ----------
+  const themeToggle = document.getElementById('themeToggle');
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    try { localStorage.setItem('touro-theme', theme); } catch (e) {}
+    setMapTheme(theme);
+    renderMarkers();
+    renderCharts();
+  }
+
+  themeToggle.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    applyTheme(current === 'light' ? 'dark' : 'light');
   });
 
   // ---------- LEDGER TABLE ----------
@@ -797,7 +1043,6 @@
   const typeFilter = document.getElementById('typeFilter');
   const rowCount = document.getElementById('rowCount');
 
-  // Populate type filter
   const allTypes = [...new Set(DATA.map(r => r[COLS.type]))].sort();
   allTypes.forEach(t => {
     const opt = document.createElement('option');
@@ -821,28 +1066,21 @@
   function renderTable() {
     const q = searchInput.value.trim().toLowerCase();
     const ft = typeFilter.value;
-
     let rows = DATA.filter(r => {
       if (ft && r[COLS.type] !== ft) return false;
       if (!q) return true;
       return r.some(v => String(v).toLowerCase().includes(q));
     });
-
-    // Sort
     rows.sort((a, b) => {
       let va = a[sortKey], vb = b[sortKey];
       if (sortKey === COLS.amt) { va = va || -1; vb = vb || -1; }
-      if (sortKey === COLS.bnum) {
-        // Bequest number can be string ("54.1") or number
-        va = parseFloat(va); vb = parseFloat(vb);
-      }
+      if (sortKey === COLS.bnum) { va = parseFloat(va); vb = parseFloat(vb); }
       if (typeof va === 'string') va = va.toLowerCase();
       if (typeof vb === 'string') vb = vb.toLowerCase();
       if (va < vb) return -1 * sortDir;
       if (va > vb) return 1 * sortDir;
       return 0;
     });
-
     tbody.innerHTML = rows.map(r => `
       <tr>
         <td class="bequest-no">${r[COLS.bnum]}</td>
@@ -855,12 +1093,9 @@
         <td>${r[COLS.country]}</td>
       </tr>
     `).join('');
-
     rowCount.textContent = rows.length === DATA.length
       ? `Showing all ${DATA.length} bequests`
       : `Showing ${rows.length} of ${DATA.length} bequests`;
-
-    // Update sort indicators
     document.querySelectorAll('#ledger thead th').forEach(th => {
       const k = parseInt(th.dataset.key);
       const ind = th.querySelector('.sort-ind');
@@ -882,10 +1117,14 @@
       renderTable();
     });
   });
-
   searchInput.addEventListener('input', renderTable);
   typeFilter.addEventListener('change', renderTable);
 
+  // ---------- INITIALIZE ----------
+  const initialTheme = document.documentElement.getAttribute('data-theme') || 'light';
+  setMapTheme(initialTheme);
+  renderMarkers();
+  renderCharts();
   renderTable();
 </script>
 
