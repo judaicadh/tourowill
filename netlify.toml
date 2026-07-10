@@ -1,0 +1,18 @@
+# Netlify configuration
+# Redirects are evaluated top-to-bottom; first match wins.
+# force = true makes the rule win even if a real file exists at the "from" path.
+
+# --- 301 redirects for moved/renamed paths ---
+# Replace these examples with your real old -> new pairs.
+
+# [[redirects]]
+#   from = "/old-page.html"
+#   to = "/"
+#   status = 301
+#   force = true
+
+# [[redirects]]
+#   from = "/data/wills.csv"
+#   to = "/TouroWill.csv"
+#   status = 301
+#   force = true

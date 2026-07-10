@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://judaicadh.github.io/tourowill/sitemap.xml
+Sitemap: https://tourowill.judaicadhpenn.org/sitemap.xml
